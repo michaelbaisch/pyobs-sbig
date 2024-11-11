@@ -47,7 +47,13 @@ def build() -> None:
     build_ext_cmd = distribution.get_command_obj("build_ext")
     for ext in build_ext_cmd.extensions:
         filename = build_ext_cmd.get_ext_filename(ext.name)
-        shutil.copyfile(os.path.join(build_ext_cmd.build_lib, filename), filename)
+        source_path = os.path.join(build_ext_cmd.build_lib, filename)
+        dest_path = os.path.join(os.path.dirname(__file__), filename)
+        dest_dir = os.path.dirname(dest_path)
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+        print(f"Copying {source_path} to {dest_path}")
+        shutil.copyfile(source_path, dest_path)
 
 
 if __name__ == "__main__":
