@@ -1,5 +1,6 @@
 import os
 import shutil
+import platform
 
 from setuptools import Extension, Distribution
 import numpy
@@ -12,17 +13,42 @@ def build() -> None:
     if os.environ.get("READTHEDOCS") == "True":
         return
 
+    # Determine if cfitsio support is enabled
+    INCLUDE_CFITSIO = os.environ.get("INCLUDE_CFITSIO", "0") == "1"
+
+    # Platform-specific settings
+    system = platform.system()
+    extra_link_args = []
+    libraries = []
+    include_dirs = [numpy.get_include()]
+
+    if system == "Darwin":  # macOS
+        # Link against SBIGUDrv framework
+        extra_link_args.extend(['-framework', 'SBIGUDrv', '-F/Library/Frameworks'])
+    elif system == "Linux":
+        # Link against libsbigudrv
+        libraries.append('sbigudrv')
+    else:
+        raise RuntimeError(f"Unsupported platform: {system}")
+
+    # Handle cfitsio
+    if INCLUDE_CFITSIO:
+        libraries.append('cfitsio')
+        include_dirs.append('/usr/include/cfitsio')
+        # Define a macro to include cfitsio in the code
+        define_macros = [('INCLUDE_FITSIO', '1')]
+    else:
+        define_macros = [('INCLUDE_FITSIO', '0')]
+
     extensions = [
         Extension(
             "pyobs_sbig.sbigudrv",
             ["pyobs_sbig/sbigudrv.pyx", "src/csbigcam.cpp", "src/csbigimg.cpp"],
-            # libraries=["sbigudrv", "cfitsio"],
-            extra_link_args=[
-                '-framework', 'SBIGUDrv',
-                '-F/Library/Frameworks',
-            ],
-            include_dirs=[numpy.get_include()],#, "/usr/include/cfitsio"],
+            libraries=libraries,
+            extra_link_args=extra_link_args,
+            include_dirs=include_dirs,
             extra_compile_args=["-fPIC"],
+            define_macros=define_macros,
         )
     ]
     ext_modules = cythonize(
@@ -39,7 +65,6 @@ def build() -> None:
             },
         }
     )
-    # distribution.package_dir = "extended"
 
     distribution.run_command("build_ext")
 

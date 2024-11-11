@@ -22,8 +22,9 @@
 Compile Time Options
 
 */
-// #define	INCLUDE_FITSIO	1		/* set to 1 to compile and link with FITSIO Library */
-
+#ifndef INCLUDE_FITSIO
+#define	INCLUDE_FITSIO	0		/* set to 1 to compile and link with FITSIO Library; default to 0 if not defined */
+#endif
 
 #ifndef _LPARDRV_
  #include "lpardrv.h"
