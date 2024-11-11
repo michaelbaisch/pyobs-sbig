@@ -16,8 +16,9 @@ def build() -> None:
         Extension(
             "pyobs_sbig.sbigudrv",
             ["pyobs_sbig/sbigudrv.pyx", "src/csbigcam.cpp", "src/csbigimg.cpp"],
-            libraries=["sbigudrv", "cfitsio"],
-            include_dirs=[numpy.get_include(), "/usr/include/cfitsio"],
+            # libraries=["sbigudrv", "cfitsio"],
+            extra_link_args=['-framework', 'SBIGUDrv'],
+            include_dirs=[numpy.get_include()]#, "/usr/include/cfitsio"],
             extra_compile_args=["-fPIC"],
         )
     ]
