@@ -18,36 +18,54 @@ def build() -> None:
 
     # Platform-specific settings
     system = platform.system()
-    extra_link_args = []
     libraries = []
-    include_dirs = [numpy.get_include()]
+    library_dirs = []
+    include_dirs = [numpy.get_include(), os.path.abspath("src")]
+    extra_compile_args = []
+    extra_link_args = []
+    define_macros = []
 
     if system == "Darwin":  # macOS
         # Link against SBIGUDrv framework
-        extra_link_args.extend(['-framework', 'SBIGUDrv', '-F/Library/Frameworks'])
+        extra_link_args.extend(["-framework", "SBIGUDrv", "-F/Library/Frameworks"])
+        extra_compile_args.extend(["-fPIC"])
     elif system == "Linux":
         # Link against libsbigudrv
-        libraries.append('sbigudrv')
+        libraries.append("sbigudrv")
+        extra_compile_args.extend(["-fPIC"])
+    elif system == "Windows":
+        # Assuming SBIGUDrv.lib is in src directory
+        libraries.append("SBIGUDrv")
+        library_dirs.append(os.path.abspath("src"))
+        include_dirs.append(os.path.abspath("src"))
+        # Set any necessary extra compile args (optional)
+        # extra_compile_args.append('/DWIN32')
     else:
         raise RuntimeError(f"Unsupported platform: {system}")
 
     # Handle cfitsio
     if INCLUDE_CFITSIO:
-        libraries.append('cfitsio')
-        include_dirs.append('/usr/include/cfitsio')
+        libraries.append("cfitsio")
+        if system == "Windows":
+            # Adjust these paths to where cfitsio is installed on Windows
+            include_dirs.append("path_to_cfitsio_include")
+            library_dirs.append("path_to_cfitsio_lib")
+        else:
+            include_dirs.append("/usr/include/cfitsio")
         # Define a macro to include cfitsio in the code
-        define_macros = [('INCLUDE_FITSIO', '1')]
+        define_macros.append(("INCLUDE_FITSIO", "1"))
     else:
-        define_macros = [('INCLUDE_FITSIO', '0')]
+        define_macros.append(("INCLUDE_FITSIO", "0"))
 
     extensions = [
         Extension(
             "pyobs_sbig.sbigudrv",
             ["pyobs_sbig/sbigudrv.pyx", "src/csbigcam.cpp", "src/csbigimg.cpp"],
             libraries=libraries,
+            library_dirs=library_dirs,
             extra_link_args=extra_link_args,
             include_dirs=include_dirs,
-            extra_compile_args=["-fPIC"],
+            extra_compile_args=extra_compile_args,
             define_macros=define_macros,
         )
     ]
@@ -68,7 +86,7 @@ def build() -> None:
 
     distribution.run_command("build_ext")
 
-    # copy to source
+    # Copy to source
     build_ext_cmd = distribution.get_command_obj("build_ext")
     for ext in build_ext_cmd.extensions:
         filename = build_ext_cmd.get_ext_filename(ext.name)
