@@ -312,3 +312,24 @@ cdef class SBIGCam:
 
         # return it
         return pos, FilterWheelStatus(status)
+    
+    def get_formatted_camera_info(self, html_format: bool) -> str:
+        """
+        Retrieves formatted camera information.
+
+        Parameters:
+            html_format (bool): If True, formats the info in HTML.
+
+        Returns:
+            str: The formatted camera information.
+        """
+        cdef string ci_str
+        cdef MY_LOGICAL html = 1 if html_format else 0
+
+        # Call the C++ method
+        res = self.obj.GetFormattedCameraInfo(ci_str, html)
+        if res != 0:
+            raise ValueError("Error getting formatted camera info: {}".format(self.obj.GetErrorString(res)))
+
+        # Convert C++ string to Python string
+        return ci_str.decode('utf-8')
