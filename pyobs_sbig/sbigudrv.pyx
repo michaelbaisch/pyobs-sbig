@@ -329,7 +329,8 @@ cdef class SBIGCam:
         # Call the C++ method
         res = self.obj.GetFormattedCameraInfo(ci_str, html)
         if res != 0:
-            raise ValueError("Error getting formatted camera info: {}".format(self.obj.GetErrorString(res)))
+            raise ValueError(self.obj.GetErrorString(res))
+            #raise ValueError("Error getting formatted camera info: {}".format(self.obj.GetErrorString(res)))
 
-        # Convert C++ string to Python string
-        return ci_str.decode('utf-8')
+        # Convert C++ string to Python string correctly
+        return ci_str.c_str().decode('utf-8')
