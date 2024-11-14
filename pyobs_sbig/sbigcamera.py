@@ -61,7 +61,10 @@ class SbigCamera(BaseCamera, ICamera, IWindow, IBinning, ICooling, ITemperatures
             raise ValueError("Could not establish link: %s" % str(e))
 
         # cooling
-        await self.set_cooling(self._setpoint is not None, self._setpoint)
+        await self.set_cooling(
+            self._setpoint is not None,
+            self._setpoint if self._setpoint is not None else 0.0
+        )
 
         # get full frame
         self._cam.binning = (1, 1)
